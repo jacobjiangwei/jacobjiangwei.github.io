@@ -1,0 +1,134 @@
+I"�P<p>##UITableview</p>
+
+<p>从08年到现在开发过的iOS应用不计其数了，但是面试很多人的时候，发现依然很多同学在最基本的列表控件上懂得不够深，下面就结合各方面的资料进行再一次讲解。</p>
+
+<p>我们都知道纯代码是效率最高的，但是在开发成本上已经越来越不如使用Storyboard性价比高，速度快，所以本文试图结合UIStoryboard来描述一整套方案。</p>
+
+<h2 id="简单配置">###简单配置</h2>
+<p>在Storyboard中拖入UITableViewController，并且修改涂涂画画<br />
+在代码区new File生成一个基于UITableviewController的自定义类，我这里暂时取名为Home。因为主页就是一个复杂的列表的不在少数吧？呵呵。<br />
+然后在Identity insepctor里修改对应的Class name，使得代码与Storyboard产生关联。<br />
+<img src="http://img226.poco.cn/mypoco/myphoto/20140120/13/17456374520140120133117055.jpg" alt="" /> 
+想要做下拉刷新嘛？系统自带了一个给你，并且可以自定义换标题哦。很多人真的不知道在哪儿选中，请看下图，先选中UITableviewController，然后在选项卡中enable这个refresh选项，就自动完成了。
+对应的代码还是复制进去，就会自动触发。<br />
+<img src="http://img226.poco.cn/mypoco/myphoto/20140120/14/17456374520140120143455079.jpg" alt="" /></p>
+
+<p>然后你需要对UITableView做一些简单的配置，首先要选中UITableView，很多人看不到选项，是因为默认关闭了。。
+<img src="http://img226.poco.cn/mypoco/myphoto/20140120/13/17456374520140120134209098.jpg" alt="" /></p>
+
+<p>下图是对UITableview的简单配置。</p>
+
+<p>Content是动态列表/静态列表，如果是静态的，那你基本不用写代码就能所见即所得，譬如“设置”页面就可以套用。但是诸如微博啦，朋友圈，还是老实的用动态列表，用代码控制。<br />
+Prototype Cells指会出现的cell有几种类型。这个后面再讲。<br />
+Style效果现场试一下就看出来了<br />
+Separator指的分隔行样式。<br />
+<img src="http://img226.poco.cn/mypoco/myphoto/20140120/13/17456374520140120134255017.jpg" alt="" /></p>
+
+<p>然后你就需要代码中做一些简单的配置了,我只列重要的，这里不是基础教程，基础的还是老实的看教科书</p>
+
+<figure class="highlight"><pre><code class="language-objc" data-lang="objc"><span class="k">-</span> <span class="p">(</span><span class="n">NSInteger</span><span class="p">)</span><span class="nf">numberOfSectionsInTableView</span><span class="p">:(</span><span class="n">UITableView</span> <span class="o">*</span><span class="p">)</span><span class="nv">tableView</span> <span class="c1">//几组
+</span><span class="k">-</span> <span class="p">(</span><span class="n">NSInteger</span><span class="p">)</span><span class="nf">tableView</span><span class="p">:(</span><span class="n">UITableView</span> <span class="o">*</span><span class="p">)</span><span class="nv">tableView</span> <span class="nf">numberOfRowsInSection</span><span class="p">:(</span><span class="n">NSInteger</span><span class="p">)</span><span class="nv">section</span><span class="c1">//每一组分别几行
+</span><span class="k">-</span><span class="p">(</span><span class="n">CGFloat</span><span class="p">)</span><span class="nf">tableView</span><span class="p">:(</span><span class="n">UITableView</span> <span class="o">*</span><span class="p">)</span><span class="nv">tableView</span> <span class="nf">heightForRowAtIndexPath</span><span class="p">:(</span><span class="n">NSIndexPath</span> <span class="o">*</span><span class="p">)</span><span class="nv">indexPath</span><span class="c1">//每一行多高
+</span><span class="k">-</span> <span class="p">(</span><span class="n">UITableViewCell</span> <span class="o">*</span><span class="p">)</span><span class="nf">tableView</span><span class="p">:(</span><span class="n">UITableView</span> <span class="o">*</span><span class="p">)</span><span class="nv">tableView</span> <span class="nf">cellForRowAtIndexPath</span><span class="p">:(</span><span class="n">NSIndexPath</span> <span class="o">*</span><span class="p">)</span><span class="nv">indexPath</span><span class="c1">//每一行分别长啥样
+</span><span class="k">-</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">tableView</span><span class="p">:(</span><span class="n">UITableView</span> <span class="o">*</span><span class="p">)</span><span class="nv">tableView</span> <span class="nf">willDisplayCell</span><span class="p">:(</span><span class="n">UITableViewCell</span> <span class="o">*</span><span class="p">)</span><span class="nv">cell</span> <span class="nf">forRowAtIndexPath</span><span class="p">:(</span><span class="n">NSIndexPath</span> <span class="o">*</span><span class="p">)</span><span class="nv">indexPath</span><span class="c1">//即将显示某行</span></code></pre></figure>
+
+<h3 id="load-more加载更多">Load More加载更多</h3>
+
+<p>加载更多的UITableview扩展控件非常多，尝试过各种第三方完美扩展后，我觉得这点小把戏也不至于需要扩展UITableview类吧？<br />
+那就是在列表追加一个Section，放在最后面，这个Section只有一个Cell,这个自定义的cell有3种状态，这些都可以自由发挥。<br />
+每当willDisplayCell的时候，你就设置他正在loading状态，给用户造成正在加载的假象，同时触发网络请求<br />
+当有网络数据返回后，自然会insert好多内容，也轮不到这个加载更多的cell显示的地方了，自然就释放了。当然了，如果没有更多内容，也可以轻松的cellForRowAtIndexPath找到唯一的cell，设置为无更多数据等状态。<br /></p>
+
+<figure class="highlight"><pre><code class="language-objc" data-lang="objc"><span class="k">typedef</span> <span class="k">enum</span><span class="p">{</span>
+	<span class="n">JWLoadMoreNormal</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span><span class="c1">//点击再加载</span>
+    <span class="n">JWLoadMoreLoading</span><span class="p">,</span><span class="c1">//加载中</span>
+    <span class="n">JWLoadMoreDone</span><span class="p">,</span><span class="c1">//无更多数据</span>
+<span class="p">}</span> <span class="n">JWLoadMoreState</span><span class="p">;</span>
+
+<span class="k">@interface</span> <span class="nc">LoadMoreCell</span> <span class="p">:</span> <span class="nc">UITableViewCell</span>
+
+<span class="k">@property</span> <span class="p">(</span><span class="n">strong</span><span class="p">,</span> <span class="n">nonatomic</span><span class="p">)</span>  <span class="n">UIView</span> <span class="o">*</span><span class="n">baseWhiteView</span><span class="p">;</span>
+<span class="k">@property</span> <span class="p">(</span><span class="n">strong</span><span class="p">,</span> <span class="n">nonatomic</span><span class="p">)</span>  <span class="n">UIActivityIndicatorView</span> <span class="o">*</span><span class="n">activity</span><span class="p">;</span>
+<span class="k">@property</span> <span class="p">(</span><span class="n">strong</span><span class="p">,</span> <span class="n">nonatomic</span><span class="p">)</span>  <span class="n">UILabel</span> <span class="o">*</span><span class="n">tipsLabel</span><span class="p">;</span>
+<span class="k">@property</span> <span class="p">(</span><span class="n">strong</span><span class="p">,</span> <span class="n">nonatomic</span><span class="p">)</span>  <span class="n">UIButton</span> <span class="o">*</span><span class="n">loadMoreButton</span><span class="p">;</span>
+<span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span><span class="n">unsafe_unretained</span><span class="p">)</span> <span class="n">id</span> <span class="o">&lt;</span><span class="n">LoadMoreCellDelegate</span><span class="o">&gt;</span>                   <span class="n">delegate</span><span class="p">;</span>
+<span class="k">-</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">setupUI</span><span class="p">;</span>
+<span class="k">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">loadMore</span><span class="p">:(</span><span class="n">id</span><span class="p">)</span><span class="nv">sender</span><span class="p">;</span>
+<span class="k">-</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">setLoadMoreStatus</span><span class="p">:(</span><span class="n">JWLoadMoreState</span><span class="p">)</span><span class="nv">status</span><span class="p">;</span></code></pre></figure>
+
+<p>###Autolayout
+做完这些，基本配置就完成了，下面需要根据设计师的要求进行自定义开发，譬如自定义cell
+<img src="http://img226.poco.cn/mypoco/myphoto/20140120/14/17456374520140120143516034.jpg" alt="" /> 
+如上图，密密麻麻的</p>
+
+<p>autolayout的拖拽不会？你太老土了吧。xcode5的拖拽，可谓是异常简单，只需要点快捷菜单的pin，设置好上下左右相对关系就可以了。<br />
+创建custom的uitableviewcell基本差不多，拖出来，画画涂涂，创建代码，改类名对应关系，按着“Control”拖拽关联，等等。<br /></p>
+
+<p>我这里只讲一个特殊的，就是图上“图片”“摘要”属于并排区域，可能没有图片的帖子，“摘要”就需要顶格排版。这样的情况该怎么设置呢？<br />
+这就得用NSLayoutConstraint的拽出来的关联了。把”摘要“的相对距离，锁定在一个固定的位置上，譬如”左边栏“，通过少量的代码计算，即可动态的修改NSLayoutConstraint.constant的距离。<br /></p>
+
+<figure class="highlight"><pre><code class="language-objc" data-lang="objc">    <span class="n">NSString</span> <span class="o">*</span><span class="n">url</span><span class="o">=</span><span class="n">data</span><span class="p">.</span><span class="n">img</span><span class="p">;</span>
+    <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">previewImageView</span> <span class="nf">setClipsToBounds</span><span class="p">:</span><span class="nb">YES</span><span class="p">];</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="n">url</span><span class="o">!=</span><span class="nb">nil</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="p">[</span><span class="n">url</span> <span class="nf">isEqualToString</span><span class="p">:</span><span class="s">@""</span><span class="p">])</span> <span class="p">{</span>  <span class="c1">//这里是判断有图没图</span>
+        <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">previewImageView</span> <span class="nf">setImageWithURL</span><span class="p">:[</span><span class="n">NSURL</span> <span class="nf">URLWithString</span><span class="p">:</span><span class="n">url</span><span class="p">]</span> <span class="nf">placeholderImage</span><span class="p">:[</span><span class="n">UIImage</span> <span class="nf">imageNamed</span><span class="p">:</span><span class="s">@"pic_default"</span><span class="p">]];</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">previewImageHeight</span><span class="p">.</span><span class="n">constant</span><span class="o">=</span><span class="n">HomeCellImageHeight</span><span class="p">;</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">previewImageWidth</span><span class="p">.</span><span class="n">constant</span><span class="o">=</span><span class="n">HomeCellImageWidth</span><span class="p">;</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">abstractLeftMargin</span><span class="p">.</span><span class="n">constant</span><span class="o">=</span><span class="mi">10</span><span class="p">;</span>  <span class="c1">//若有图，摘要与图的左边距变为10</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">summaryDistanceBetweenTitle</span><span class="p">.</span><span class="n">constant</span><span class="o">=</span><span class="mi">80</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span>
+    <span class="p">{</span>
+        <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">previewImageView</span> <span class="nf">setImage</span><span class="p">:</span><span class="nb">nil</span><span class="p">];</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">previewImageHeight</span><span class="p">.</span><span class="n">constant</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span>  <span class="c1">//图片大小全清空为0</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">previewImageWidth</span><span class="p">.</span><span class="n">constant</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">abstractLeftMargin</span><span class="p">.</span><span class="n">constant</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span>  <span class="c1">//若无图，摘要与图的左边距变为10</span>
+    <span class="p">}</span>
+    <span class="p">[</span><span class="n">self</span> <span class="nf">setNeedsUpdateConstraints</span><span class="p">];</span>   <span class="c1">//记得强制刷新，要不然系统懒懒的</span>
+    <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">contentView</span> <span class="nf">layoutIfNeeded</span><span class="p">];</span>
+    <span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">contentView</span> <span class="nf">setNeedsLayout</span><span class="p">];</span></code></pre></figure>
+
+<p>###动态计算高度</p>
+
+<p>做到这里，恐怕大部分人都遇到一个门槛了。那就是如何动态计算cell的高度。<br />
+最简单的，就是网易新闻类，固定高度。return 44;<br />
+若是动态的，无非是创建一个cell，并且初始化构造好，然后输出cell的最后一行控件的位置，最终给出位置。<br /></p>
+
+<p>但是这就导致了函数运行的低效。你想，autolayout本来就够效率低了（因为程序猿省事儿了），再为每一行计算2次，这效率能高？<br />
+我亲测发现，动态排版效率是非常低的，不足以信任。<br /></p>
+
+<p>最好办的，还是土方法。获取对应的数据，根据自己设定的排版规则，动态的计算。土归土，效率高啊！</p>
+
+<figure class="highlight"><pre><code class="language-objc" data-lang="objc">        <span class="n">TopicID</span> <span class="o">*</span><span class="n">data</span><span class="o">=</span><span class="p">[</span><span class="n">threadList</span> <span class="nf">objectAtIndex</span><span class="p">:</span><span class="n">indexPath</span><span class="p">.</span><span class="n">row</span><span class="p">];</span>
+<span class="c1">//        NSLog(@"计算行数为%d",indexPath.row);</span>
+        <span class="kt">int</span> <span class="n">height</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span>
+        <span class="n">height</span><span class="o">+=</span><span class="mi">17</span><span class="p">;</span> <span class="c1">//用户名与顶部空间</span>
+        <span class="n">height</span><span class="o">+=</span><span class="mi">17</span><span class="p">;</span> <span class="c1">//用户名高度</span>
+        <span class="n">height</span><span class="o">+=</span><span class="mi">8</span><span class="p">;</span> <span class="c1">//用户名与标题之间距离</span>
+        
+        <span class="n">NSString</span> <span class="o">*</span><span class="n">titleContent</span><span class="o">=</span><span class="n">data</span><span class="p">.</span><span class="n">title</span><span class="p">;</span>
+        <span class="n">UIFont</span> <span class="o">*</span><span class="n">titleFont</span> <span class="o">=</span> <span class="p">[</span><span class="n">UIFont</span> <span class="nf">boldSystemFontOfSize</span><span class="p">:</span><span class="mi">16</span><span class="p">.</span><span class="mi">0</span><span class="p">];</span>
+        <span class="n">CGSize</span> <span class="n">titleRealSize</span><span class="o">=</span><span class="p">[</span><span class="n">titleContent</span> <span class="nf">sizeWithFont</span><span class="p">:</span><span class="n">titleFont</span> <span class="nf">constrainedToSize</span><span class="p">:</span><span class="n">CGSizeMake</span><span class="p">(</span><span class="mi">280</span><span class="p">,</span> <span class="mi">150</span><span class="p">)</span> <span class="n">lineBreakMode</span><span class="o">:</span><span class="n">NSLineBreakByTruncatingTail</span><span class="p">];</span>
+        <span class="n">height</span><span class="o">+=</span><span class="n">titleRealSize</span><span class="p">.</span><span class="n">height</span><span class="p">;</span><span class="c1">//动态计算标题高度</span>
+        
+        <span class="k">if</span> <span class="p">(</span><span class="n">data</span><span class="p">.</span><span class="n">img</span><span class="o">!=</span><span class="nb">nil</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="p">[</span><span class="n">data</span><span class="p">.</span><span class="n">img</span> <span class="nf">isEqualToString</span><span class="p">:</span><span class="s">@""</span><span class="p">])</span> <span class="p">{</span>
+            <span class="n">height</span><span class="o">+=</span><span class="n">HomeCellImageHeight</span><span class="p">;</span><span class="c1">//统计图的起始点</span>
+            <span class="n">height</span><span class="o">+=</span><span class="mi">20</span><span class="p">;</span>
+<span class="c1">//            NSLog(@"有图");</span>
+        <span class="p">}</span>
+        <span class="k">else</span>
+        <span class="p">{</span>
+            <span class="n">NSString</span> <span class="o">*</span><span class="n">abstract</span><span class="o">=</span><span class="n">data</span><span class="p">.</span><span class="n">abstract</span><span class="p">;</span>
+            <span class="n">UIFont</span> <span class="o">*</span><span class="n">abstractFont</span> <span class="o">=</span> <span class="p">[</span><span class="n">UIFont</span> <span class="nf">boldSystemFontOfSize</span><span class="p">:</span><span class="mi">14</span><span class="p">.</span><span class="mi">0</span><span class="p">];</span>
+            <span class="n">CGSize</span> <span class="n">abstractRealSize</span><span class="o">=</span><span class="p">[</span><span class="n">abstract</span> <span class="nf">sizeWithFont</span><span class="p">:</span><span class="n">abstractFont</span> <span class="nf">constrainedToSize</span><span class="p">:</span><span class="n">CGSizeMake</span><span class="p">(</span><span class="mi">280</span><span class="p">,</span> <span class="mi">300</span><span class="p">)</span> <span class="n">lineBreakMode</span><span class="o">:</span><span class="n">NSLineBreakByTruncatingTail</span><span class="p">];</span>
+            
+            <span class="n">height</span><span class="o">+=</span><span class="n">abstractRealSize</span><span class="p">.</span><span class="n">height</span><span class="p">;</span>
+            <span class="n">height</span><span class="o">+=</span><span class="mi">20</span><span class="p">;</span>
+<span class="c1">//            NSLog(@"无图");</span>
+        <span class="p">}</span>
+        <span class="n">height</span><span class="o">+=</span><span class="mi">56</span><span class="p">;</span> <span class="c1">//统计图的高度</span>
+        <span class="n">height</span><span class="o">+=</span><span class="mi">3</span><span class="p">;</span><span class="c1">//下边框的高度</span></code></pre></figure>
+
+<p>最后别忘了Profile，计算时间，每一个细节的时间优化，最终都会体现在列表的流畅度表现上。
+通过以上几点呢，再结合现成好用的SDWebImageCache，相信大家一定可以做出真正美观、高效的列表哦！</p>
+
+:ET
