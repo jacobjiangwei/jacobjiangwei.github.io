@@ -8,7 +8,7 @@ tags: []
 
 作者：蒋伟 网易云信客户端架构师
 
-简介
+## 简介
 
 移动互联网时代，App的功能越来越多，集成的第三方库也与日俱增，然而苹果App使用4G能够下载的限制虽然已经提到高200MB，依然对于App开发者显得捉襟见肘。因此App开发者都带着谨慎的态度去集成第三方SDK供应商。
 网易云信音视频服务的主要产品形态包含iOS/Android SDK，我们深刻的感受到包体积优化的重要性，因此包体积优化就成了我们工作的重中之重。
@@ -16,7 +16,7 @@ tags: []
 
 本文旨在分享一个网易云信基于Mach-O研究思路的瘦身最佳实践成果。
 
-常见的App瘦身技巧
+## 常见的App瘦身技巧
 1. 精简资源（我们SDK没图片资源，故跳过）
 2. 优化可执行文件
 ```
@@ -31,7 +31,7 @@ Make String Read-Only: Yes
 
 在这些都打开了之后的基础之上，我们还有进一步压榨的空间。在此之前，我们首先要讲一下Mach-O格式。
 
-##Mach-O格式
+## Mach-O格式
 
 Mach-O 其实是 Mach Object 文件格式的缩写，是 mac 以及 iOS 上可执行文件的格式。
 
@@ -83,16 +83,16 @@ Architectures in the fat file: NERtcSDK.framework/NERtcSDK are: i386 x86_64 armv
 
 那么什么方法可以优化掉那么一长串的TEXT呢？
 
-#优化策略
+### 优化策略
 
-##1. 减少全局静态变量的使用，改为类对象
+## 1. 减少全局静态变量的使用，改为类对象
 
 静态常量字符串是历来项目的重灾区，小小的字符串，日志打多了，可能会涨个几百KB。
 ![img](https://raw.githubusercontent.com/jacobjiangwei/jacobjiangwei.github.io/master/images/25.png)
 
-##2. 减少模版的使用
+## 2. 减少模版的使用
 
-##3. 避免重复代码、删掉无用代码
+## 3. 避免重复代码、删掉无用代码
 
 在删除之前，我们首先要弄清楚哪些代码会被编译成 *.o 文件打包进去，哪些不会。
 
@@ -153,7 +153,7 @@ Specifies the degree to which the generated code is optimized for speed and bina
 
 基本上大家Debug默认选择-O0,这样编译速度最快，Release只会选择-Os，这也是xcode默认选项。-Ofast只要代码写的足够规范，会进一步优化，但是还是侧重编译速度的。-Oz则是尽最大可能优化包体积，他可以优化编译器自动生成的重复代码。以云信为例，则选择-Oz。
 
-#Link-Time Optimization(LTO)
+## Link-Time Optimization(LTO)
 
 Enabling this setting allows optimization across file boundaries during linking. * *No:* Disabled. Do not use link-time optimization. * *Monolithic Link-Time Optimization:* This mode performs monolithic link-time optimization of binaries, combining all executable code into a single unit and running aggressive compiler optimizations. * *Incremental Link-Time Optimization:* This mode performs partitioned link-time optimization of binaries, inlining between compilation units and running aggressive compiler optimizations on each unit in parallel. This enables fast incremental builds and uses less memory than Monolithic LTO.
 
@@ -168,7 +168,7 @@ Activating this setting causes the `-dead_strip` flag to be passed to `ld(1)` vi
 
 #明白了Xcode的默认编译原理和编译选项，那我们的工作方针就很清楚了。
 
-##1. 去除一级项目中link的无效对象
+## 1. 去除一级项目中link的无效对象
 
 因为Xcode天然只能不link二级项目、dependency的object，因此一级项目中的无效对象就处于无人处理的状态。
 
@@ -178,11 +178,11 @@ Activating this setting causes the `-dead_strip` flag to be passed to `ld(1)` vi
 
 https://github.com/wuba/WBBlades
 
-##2. 子模块化工程架构
+## 2. 子模块化工程架构
 
 这需要对所有项目工程进行彻底的分解子模块化，这样得出来的好处不言而喻，那就是link工具可以细颗粒度的strip掉无效class代码，我们的代码重构工程显示SDK体积整整优化了30%，少了几十M。
 
-##3. 去除无人使用的函数
+## 3. 去除无人使用的函数
 
 上面的几个优化重在优化掉无效类，那么进一步优化无用函数unused function则成了进一步优化的重点。
 
@@ -190,7 +190,7 @@ https://github.com/wuba/WBBlades
 
 经过一番辛苦的翻阅资料，LTO进入了我的视野。
 
-###LTO(Link Time Optimization)是什么？
+### LTO(Link Time Optimization)是什么？
 
 Link time optimization目的是希望在通过link阶段的优化达到编译出的文件体积更小、执行效率更高的一种优化方式。其实这个方案提出来执行在Gcc, LLVM Clang都适配，他们基本上均通过libLTO在bitcode埋点，在link阶段实现最终优化。
 
@@ -228,7 +228,7 @@ https://bugs.chromium.org/p/chromium/issues/detail?id=408997
 
 同样类似的道理，我们在Android端编译层启用了-fdata-sections，-ffunction-sections并且在link阶段启用了--gc-sections，同样实现了巨量的体积优化。在这里我不再细说。
 
-##4. 常态监控流程
+## 4. 常态监控流程
 
 一次突击性的任务固然可以优化包体积很多，但是其中投入的人力精力是巨大的。
 
@@ -238,7 +238,7 @@ https://bugs.chromium.org/p/chromium/issues/detail?id=408997
 
 由此我们便可得知哪些模块消耗了多大的体积，根据判断做出优化。
 
-#总结
+# 总结
 至此我们把竞品的Video视频SDK进行横向比较，均取最新版本，云信SDK完胜！
 
 Twilio  276MB
