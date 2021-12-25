@@ -1,0 +1,283 @@
+I"�G<p>作者：蒋伟 网易云信客户端首席架构师</p>
+
+<h2 id="简介">简介</h2>
+
+<p>2020年，移动互联网 DevOps 领域显现出了规模化运营的趋势，多数 App 研发大厂均配备了上百人的研发团队规模，编译计算的诉求也是与日俱增，用自动化测试节约人力的行为也是不断涌现。Mobile DevOps 在解决大规模编译、自动化测试、交付路上的挑战十分艰巨，但在新冠疫情的背景下，研发预算却趋于保守，如何在这个时代背景下解决高增长的计算需求与低预算之间的矛盾，成了一个亟待解决的难题。</p>
+
+<p>本文将介绍 Proxmox 在网易智企旗下网易云信的实际运用，并提供了<strong>节流提效的最佳实践</strong>。我们将首先介绍 Mobile DevOps 工作中的挑战，再介绍 Proxmox 的实践，最后结合移动应用研发 CI/CD 持续集成、持续交付给出具体的效果。</p>
+
+<h2 id="什么是-mobile-devops">什么是 Mobile DevOps?</h2>
+
+<p>当今 DevOps 应该为很多后台服务端研发所熟知，从字面意思上讲，他是开发+运营的合体，实际上他是一个优秀的软件交付理念，以加速软件研发交付一整套工作流程为目标，不断改进，持续创新。因此这套理念也常常跟敏捷的工作文化联系起来，可以说敏捷离不开 DevOps，DevOps 是敏捷理念的实践。</p>
+
+<p>移动应用开发领域与服务端开发有显著的不同，但在 DevOps 上的理念、目标是一致的，通用的。Mobile DevOps 就是以加速移动应用领域的研发交付流程为目标，尽快响应市场瞬息万变的需求的一套实践方法。在2020年，可以毫不客气的说，如果要想在激烈的市场竞争中脱颖而出，那么 Mobile DevOps 就是必备选项。</p>
+
+<h2 id="mobile-devops-的现状与挑战">Mobile DevOps 的现状与挑战</h2>
+
+<p>Mobile DevOps 的实现存在一些挑战，因为移动端和服务端场景的差异，导致 Mobile DevOps 在实现上与服务端 DevOps 会有所不同，主要因为以下几点原因：</p>
+
+<h3 id="移动端构建天然碎片化严重">移动端构建天然碎片化严重</h3>
+
+<p>iOS App 的所有编译都依赖 MacOS 系统的电脑：Mac Mini / Mac Pro，外形大小不一，通常购买超过10台后就需要自建 Mac 机房，对可维护性、稳定性都是一个巨大的挑战。</p>
+
+<p>Android App 依赖的工具链通用性较强，可以使用廉价的 PC (Win/Linux)来满足要求，依赖较多不同版本的 Android SDK，NDK，Gradle 支持。</p>
+
+<p>Mac App 编译依赖不同操作系统版本，有的团队对 Xcode 版本也有特定的要求。</p>
+
+<p>Windows 操作系统版本，SDK 多样的操作系统版本匹配的 Visual Studio 的版本也很复杂。</p>
+
+<h3 id="移动端应用研发迭代周期越快越好">移动端应用研发迭代周期越快越好</h3>
+
+<p>绝大部分 Top 10 的团队基本都能做到2周内发正式版本，1天内针对严重问题发布 hotfix。这就要求 Mobile DevOps 能够做到自动化测试1天内全量完成，不同研发小组、各个的 feature 对应 branch 的测试是每天都在并发进行的。因此 DevOps 必须要解决高计算量的需求。</p>
+
+<h3 id="维护-ci-设备成本越来越高">维护 CI 设备成本越来越高</h3>
+
+<p>一个10人的团队至少需要一套自动化编译、测试机器，如果团队达到上百人，上千人，这个设备的数量就会呈指数级增长。编译机器这里指 Mac Mini、Mac Pro、PC、Linux 服务器，自动化测试手机Android、iPhone 若干等。</p>
+
+<p>以笔者工作过的几家单位为例，每年采购自动化测试编译机器均以百万计，再算上设备折旧更新，这笔成本已经事实上变成了每年的固定支出。</p>
+
+<p>不仅采购设备成本居高不下，编译机器越多，维护成本越大。Mobile DevOps 的每个操作都需要复制粘贴到数十台不同机器，每次机器升级、设备更新，Mobile DevOps 人员是忙得像热窝上的蚂蚁。</p>
+
+<h2 id="为什么考虑企业私有云计算的解决方案">为什么考虑企业私有云计算的解决方案？</h2>
+
+<p>移动构建任务“云化”听起来有些超现实，但是只要解决掉移动构建碎片化的难题，就可以享受后端开发 DevOps 云的同等便利。接下来我们谈谈考虑私有云的几个思考过程、遇到的挑战和解决办法。</p>
+
+<h3 id="为什么考虑私有云的-devops-方案">为什么考虑私有云的 DevOps 方案？</h3>
+
+<p>私有云 DevOps 方案主要能带来以下几点优势：</p>
+
+<ul>
+  <li>
+    <p>Security 安全性：私有云意味着代码的绝对安全，所有编译都发生在物理机房内，绝无外部访问的安全性漏洞；</p>
+  </li>
+  <li>
+    <p>High availability 高可用性：私有云与 Git 代码仓库在同网络下拥有无与伦比的优势。以网易为例，代码内网checkout 速度高达 150M/s，一份 WebRTC 代码高达 20GB 之巨，如果使用公有云方案几乎是噩梦，而且有很多工程有天然的复杂性，很有可能引用了多个内网的 submodule 或者是外网的库依赖，迁移改造代价大，收益低；</p>
+  </li>
+  <li>
+    <p>Scalability 高扩展性：跟许多公有云方案一样，私有云同样具备集群式管理，可以简单的复制粘贴，一台新的构建机器就创建成功了；</p>
+  </li>
+</ul>
+
+<h3 id="私有云的挑战">私有云的挑战</h3>
+
+<p>找到支持虚拟化的软件并不难，难在要找到同时具备全平台虚拟化、扩展性、稳定性、还免费的产品。</p>
+
+<p>我们尝试了各种选项组合，列举了市面上的软件供应商，如下图：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th> </th>
+      <th>支持平台</th>
+      <th>稳定</th>
+      <th>易扩容</th>
+      <th>费用</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Hyper-V</td>
+      <td>Windows</td>
+      <td>是</td>
+      <td>容易</td>
+      <td>付费</td>
+    </tr>
+    <tr>
+      <td>vSphere Hypervisor</td>
+      <td>Windows,Linux,MacOS</td>
+      <td>是</td>
+      <td>容易</td>
+      <td>付费</td>
+    </tr>
+    <tr>
+      <td>Oracle VM</td>
+      <td>Windows,Linux,MacOS</td>
+      <td>是</td>
+      <td>难</td>
+      <td>免费</td>
+    </tr>
+    <tr>
+      <td>Proxmox VE</td>
+      <td>Windows,Linux,MacOS</td>
+      <td>是</td>
+      <td>容易</td>
+      <td>免费</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>于是很自然的 Proxmox VE 进入了我们的视线，他拥有高稳定性、易扩展并且支持多平台的特性。在进行筛选调研之后，我们决定使用 Proxmox VE 来实现网易云信的私有云方案，助力 Mobile DevOps 工作。接下来我们先对它做一个简单的介绍。</p>
+
+<h2 id="proxmox-ve-简介">Proxmox VE 简介</h2>
+
+<p>Proxmox VE 是一款强大的企业级虚拟化开源软件，通过一个简单的 Web 界面即可管理容器，定义机器 CPU、磁盘容量、网络配置并且具备集群式管理功能，它支持虚拟化 Windows、Linux 以及各种其他操作系统。在这里我们基于 Proxmox V6.2 的版本展开讨论。</p>
+
+<p>这里先贴上图，直观感受一下它的管理界面。</p>
+
+<p><img src="https://raw.githubusercontent.com/jacobjiangwei/jacobjiangwei.github.io/master/images/01.png" alt="img" /></p>
+
+<h2 id="mobile-devops-工作大变样">Mobile DevOps 工作大变样</h2>
+
+<p>详细的安装过程我们将在本文最后详细展开。先来看一下使用了 Proxmox 之后，<strong>网易云信在私有云方案的 Mobile DevOps 上发生了什么变化</strong>。</p>
+
+<h3 id="撬开了性能猛兽">撬开了性能猛兽</h3>
+
+<p>左侧为一台普通联想 PC 的磁盘读写性能，右侧是一台 Proxmox Windows RAID 磁盘的性能，可以对比看出使用了 Proxmox 后文件读写直接提高了8~10倍。</p>
+
+<p><img src="https://raw.githubusercontent.com/jacobjiangwei/jacobjiangwei.github.io/master/images/02.png" alt="img" /><img src="https://raw.githubusercontent.com/jacobjiangwei/jacobjiangwei.github.io/master/images/03.png" alt="img" /></p>
+
+<p>因为高效率的内存共享，平时 16GB 紧巴巴的机器，直接共享直至 256GB 的内存，完全无压力。CPU 也可以设置非常高的配置，让 Proxmox 动态分配直至最高性能。</p>
+
+<p><img src="https://raw.githubusercontent.com/jacobjiangwei/jacobjiangwei.github.io/master/images/04.png" alt="img" /></p>
+
+<p>下图是一个 Jenkins Job 不同硬件的前后对比，编译时间直接从 15 分钟提速到只需要 3 分钟！</p>
+
+<p><img src="https://raw.githubusercontent.com/jacobjiangwei/jacobjiangwei.github.io/master/images/05.png" alt="img" /></p>
+
+<h3 id="维护轻松易管理">维护轻松易管理</h3>
+
+<p>还记得 Mobile DevOps 每天在不同的机器之间逐个进行配置维护管理吗？不仅容易犯错，丢三落四的脚本没有执行到位，还会发生不可控的风险。</p>
+
+<p>使用 Proxmox VE 之后，再也不必如此费心处理了。只需要配置完成一个样本机器，直接复制、粘贴，一台一模一样的机器就制作完成了，只需要修改一下节点机器的 IP 设置，即可完成机器配置。如果使用的是 DHCP，那就彻底免维护搞定。</p>
+
+<p><img src="https://raw.githubusercontent.com/jacobjiangwei/jacobjiangwei.github.io/master/images/06.png" alt="img" /></p>
+
+<h3 id="节约成本">节约成本</h3>
+
+<p>两台 R730 价格大约 15w，相当于团队购置多少台机器呢？</p>
+
+<ul>
+  <li>
+    <p>2台2020款新 Mac Pro (20w)；</p>
+  </li>
+  <li>
+    <p>20台联想台式机 PC （20w）；</p>
+  </li>
+  <li>
+    <p>20台 Linux 编译机器 （15w)；</p>
+  </li>
+  <li>
+    <p>额外再配备 2-3 名 DevOps 维护人员；</p>
+  </li>
+</ul>
+
+<p>价格优势，显而易见，而且购买各类机器闲时资源浪费严重，远不如共享私有云服务器效率高。</p>
+
+<h2 id="云信使用-proxmox-ve-详细安装流程">云信使用 Proxmox VE 详细安装流程</h2>
+
+<p>下面我们详细为大家介绍，网易云信从采购流程开始到安装完成 Proxmox 的全过程。</p>
+
+<h3 id="采购服务器机器">采购服务器机器</h3>
+
+<p>简单来说， Proxmox VE 是一个基于 Debian 操作系统+虚拟化软件的套餐。软件一般是安装在服务器上，放入机房交给 IT 统一托管的，毕竟大家都知道 UPS 电源、统一制冷，这些都是不小的硬性要求。因此采购刀片式服务器放入机房就是第一步。</p>
+
+<p>那么采购多大的服务器配置就成了第一步慎重的选择，这里可以谈谈我们的配置计算方式。</p>
+
+<ul>
+  <li>
+    <p>一款 2020 年 Intel CPU 的标准高配是 8核，i9, 2.3GHz, 16GB 内存；</p>
+  </li>
+  <li>
+    <p>一款联想启天商用 PC 差不多是 6核，i5-9500, 3.0GHz, 16GB 内存；</p>
+  </li>
+</ul>
+
+<p>那么测算基本可以用：团队成员数量 x 0.5 得出每时每刻都有需求在编译的 CPU 数量、内存需求等等。</p>
+
+<p>以网易云信为例，我们经过测算，平均需要 iOS/Android/Windows/MacOS 每个平台同时 3 个 Job 的并发能力，那么就是需要台 12个MBP 的算力，于是我们选择了2台 Dell R730 从线上机房<strong>退役</strong>下来的机器。（节约公司成本，技能点 get 了吗~）</p>
+
+<p><img src="https://raw.githubusercontent.com/jacobjiangwei/jacobjiangwei.github.io/master/images/07.png" alt="img" /></p>
+
+<p>内存是越多越好，高并发的编译计算非常耗内存，我们干脆升级配置到 256GB 的内存条。</p>
+
+<p>磁盘空间是按需配置，一般来说 MacOS 必须要配置 SSD 的，Windows 设备可以使用 Raid 磁盘矩阵，速度也可以做到非常快，待会儿会有图说明。以我们为例，为每台机器配置了 1TB SSD，8TB RAID HDD。</p>
+
+<p>好了，废话不多说，采购流程完毕，下面进入安装服务器软件阶段。</p>
+
+<p><img src="https://raw.githubusercontent.com/jacobjiangwei/jacobjiangwei.github.io/master/images/08.png" alt="img" /></p>
+
+<p>这时候我是不会告诉你服务器机房冷到让人瑟瑟发抖，原因我就不多说了，反正我是穿着T袖进去的。</p>
+
+<h3 id="安装流程">安装流程</h3>
+
+<p>第一步到这里 https://proxmox.com/en/downloads/category/iso-images-pve 下载 ISO，烧录到 USB 磁盘作为引导安装盘，进入引导画面后的安装过程了，一路点 Next按照步骤填写即可。</p>
+
+<p>一般机房是要求固定 IP 地址的，建议这一步慎重配置好，另外建议网口使用 10GB 带宽的网线。</p>
+
+<p><img src="https://raw.githubusercontent.com/jacobjiangwei/jacobjiangwei.github.io/master/images/09.png" alt="img" /></p>
+
+<p>至此画面，安装完毕，自动重启后，你就可以离开瑟瑟发抖的机房了。</p>
+
+<h3 id="设置虚拟服务器集群">设置虚拟服务器集群</h3>
+
+<p>在所有的机器安装好了之后，先登录每台机器对应的管理界面，例如 https://192.168.1.141:8006，只需要找到一台作为主控制器，点击 Create Cluster，复制粘贴加入信息，到其他机器上粘贴，即可一键加入集群管理。至此，你就可以在任意一台管理界面上管理您的所有集群。</p>
+
+<p><img src="https://raw.githubusercontent.com/jacobjiangwei/jacobjiangwei.github.io/master/images/10.png" alt="img" /></p>
+
+<h3 id="磁盘分配">磁盘分配</h3>
+
+<p>先跑到这个界面，熟悉一下机器的磁盘配置分区信息，为接下来的系统安装做准备。</p>
+
+<p><img src="https://raw.githubusercontent.com/jacobjiangwei/jacobjiangwei.github.io/master/images/11.png" alt="img" /></p>
+
+<p>要想安装几个操作系统，每个分别需要多大磁盘、多少 CPU、多少内存，这些都得提前做好计划。我们第一期规划是这样子做的，如下图：</p>
+
+<p><img src="https://raw.githubusercontent.com/jacobjiangwei/jacobjiangwei.github.io/master/images/12.png" alt="img" /></p>
+
+<h3 id="准备安装虚拟机">准备安装虚拟机</h3>
+
+<p>安装操作系统的 ISO 都是放在<strong>/var/lib/vz/template/iso</strong> 目录下面。一般可以使用 ssh 命令登录到 Proxmox 终端，直接命令行下载操作系统，也可以支持 SFTP 直接传输，甚至是 NFS 的方式去挂载远程磁盘。</p>
+
+<p>等完成了系统的下载，便可以在 local 磁盘的 content 内看到 ISO 安装盘。</p>
+
+<p><img src="https://raw.githubusercontent.com/jacobjiangwei/jacobjiangwei.github.io/master/images/13.png" alt="img" /></p>
+
+<h3 id="虚拟机的安装">虚拟机的安装</h3>
+
+<p>首先给你的虚拟机取一个名字，这里一般推荐 OS+Version+IDE 工具链+version，例如 Ubuntu18.04+AndroidR10 以便于区分。</p>
+
+<p>注意要勾选 Advanced 选项，选中 Start at boot，这样就算 Proxmox 机器重启，你的虚拟机也会自动启动。</p>
+
+<p><img src="https://raw.githubusercontent.com/jacobjiangwei/jacobjiangwei.github.io/master/images/14.png" alt="img" /></p>
+
+<p>下拉选择启动 ISO 文件：</p>
+
+<p><img src="https://raw.githubusercontent.com/jacobjiangwei/jacobjiangwei.github.io/master/images/15.png" alt="img" /></p>
+
+<p>磁盘就要根据需求选择 HDD 还是 SSD，设置容量大小，Cache 模式默认即可，一般来说 Write Back 模式可以获得更好的性能。</p>
+
+<p>值得一提的是，SCSI 虽然提供了最佳的性能，但并不是所有操作系统默认就支持，Linux 默认是支持的，Windows 则不支持，需要在启动盘区域提前下载好驱动盘，添加第二个 CD ROM，并且动态的搜索驱动安装 SCSI 硬盘支持。</p>
+
+<p><img src="https://raw.githubusercontent.com/jacobjiangwei/jacobjiangwei.github.io/master/images/16.png" alt="img" /></p>
+
+<p>CPU 一般可以选择 2 个 Core，Sockets 插座意味着物理 CPU 的数量，因此实际 Total Core 是他们相乘的结果。如果你需要超强的性能，你可以设置32核，甚至更多，Proxmox 会动态分配 CPU 计算力，如果只有你的任务在执行，那么则会分配至高到你的设置数值。</p>
+
+<p><img src="https://raw.githubusercontent.com/jacobjiangwei/jacobjiangwei.github.io/master/images/17.png" alt="img" /></p>
+
+<p>内存配置，你可以选择弹性共享内存，最低 2GB 最高 16GB 内存。这样比较节约资源，一般来说 Ubuntu 只需要 16GB 内存，Windows 就需要 16~32GB 内存最佳。</p>
+
+<p><img src="https://raw.githubusercontent.com/jacobjiangwei/jacobjiangwei.github.io/master/images/18.png" alt="img" /></p>
+
+<p>网络适配器，选择默认或者 RealTek 网卡适配器都是可以的。</p>
+
+<p><img src="https://raw.githubusercontent.com/jacobjiangwei/jacobjiangwei.github.io/master/images/19.png" alt="img" /></p>
+
+<p>最终确认，记得勾选 Start after created 即可。</p>
+
+<p><img src="https://raw.githubusercontent.com/jacobjiangwei/jacobjiangwei.github.io/master/images/20.png" alt="img" /></p>
+
+<p>至此你已经学会了如何安装配置一台虚拟机，操作系统的安装与单机安装操作系统基本一致，就不在此赘述。</p>
+
+<h2 id="总结">总结</h2>
+
+<p>至此，简单介绍了网易云信在 Mobile DevOps 上通过 Proxmox 的实现节流提效的过程。</p>
+
+<p>网易云信在采用了基于 Proxmox VE 的移动私有构建云方案后，显著提高了编译速度，持续集成变得更频繁，迭代周期变得更短，自动化测试比例进一步提高，研发设备成本得到了显著控制。</p>
+
+<p>Proxmox VE 在国内依然不为众人所熟知，还有很多应用场景还未得到进一步的开发验证，诸如设备备份，磁盘扩容，不宕机维护等。网易云信一直在技术领域深耕，期待有更多的同行进行切磋交流。</p>
+
+<h3 id="作者介绍">作者介绍</h3>
+
+<p>蒋伟，网易云信客户端首席架构师，跨平台研发专家。2006 年毕业后从事 Mobile 开发领域，曾在 ZTE、Orange、RingCentral 等任资深研发经理。2020 年加入网易，现任网易云信客户端组技术负责人，全面负责网易云信客户端 IM、音视频 SDK 的架构设计与研发，对跨平台研发、音视频、DevOps 均有多年的工作项目经验，平时热衷于函数式编程、DevOps 持续集成。</p>
+
+:ET
