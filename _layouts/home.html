@@ -2,30 +2,67 @@
 layout: default
 ---
 
-<div class="catalogue">
-  {% for post in paginator.posts %}
-    <a href="{{ post.url | prepend: site.baseurl }}" class="catalogue-item">
-      <div>
-        <time datetime="{{ post.date }}" class="catalogue-time">{{ post.date | date: "%B %d, %Y" }}</time>
-        <h1 class="catalogue-title">{{ post.title }}</h1>
-        <div class="catalogue-line"></div>
+{% assign total_posts = site.posts | size %}
+{% assign latest_post = site.posts | first %}
+{% assign oldest_post = site.posts | last %}
+{% assign posts_by_year = site.posts | group_by_exp: "post", "post.date | date: '%Y'" %}
 
-        <p>
-          {{ post.content | strip_html | truncatewords: 30 }}
-        </p>
+<section class="home-intro">
+  <aside class="profile-card">
+    <div class="profile-mark">JJ</div>
+    <p class="eyebrow">Personal archive</p>
+    <h1>蒋伟的技术宅博客</h1>
+    <p>{{ site.description }}。工作、产品、家庭、阅读、出差、时代观察，慢慢沉淀成自己的长期档案。</p>
+    <div class="profile-links">
+      <a href="{{ '/about' | prepend: site.baseurl }}">关于我</a>
+      <a href="{{ '/archive' | prepend: site.baseurl }}">文章归档</a>
+      <a href="{{ '/feed.xml' | prepend: site.baseurl }}">RSS</a>
+    </div>
+  </aside>
 
-      </div>
-    </a>
-  {% endfor %}
-</div>
+  <article class="featured-post">
+    <p class="eyebrow">Latest note</p>
+    <time datetime="{{ latest_post.date }}">{{ latest_post.date | date: "%Y.%m.%d" }}</time>
+    <h2><a href="{{ latest_post.url | prepend: site.baseurl }}">{{ latest_post.title }}</a></h2>
+    <p>{{ latest_post.content | strip_html | truncate: 150 }}</p>
+    <a class="read-more" href="{{ latest_post.url | prepend: site.baseurl }}">继续读 →</a>
+  </article>
+</section>
 
-<div class="pagination">
-  {% if paginator.previous_page %}
-    <a href="{{ paginator.previous_page_path | prepend: site.baseurl }}" class="left arrow">&#8592;</a>
-  {% endif %}
-  {% if paginator.next_page %}
-    <a href="{{ paginator.next_page_path | prepend: site.baseurl }}" class="right arrow">&#8594;</a>
-  {% endif %}
+<section class="home-overview">
+  <div class="mini-stat">
+    <strong>{{ total_posts }}</strong>
+    <span>篇文章</span>
+  </div>
+  <div class="mini-stat">
+    <strong>{{ oldest_post.date | date: "%Y" }}–{{ latest_post.date | date: "%Y" }}</strong>
+    <span>写作跨度</span>
+  </div>
+  <div class="mini-stat">
+    <strong>{{ latest_post.date | date: "%Y.%m.%d" }}</strong>
+    <span>最近更新</span>
+  </div>
+  <a class="about-strip" href="{{ '/about' | prepend: site.baseurl }}">
+    <span>About</span>
+    <strong>移动互联网、平台工程、AI 产品现场，一个普通从业者的长期记录。</strong>
+  </a>
+</section>
 
-  <span>{{ paginator.page }}</span>
-</div>
+<section class="section-card writing-card">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">Writing pulse</p>
+      <h2>更新频率</h2>
+    </div>
+    <a href="{{ '/archive' | prepend: site.baseurl }}">完整归档 →</a>
+  </div>
+  <div class="year-bars">
+    {% for year in posts_by_year %}
+      <a class="year-bar" href="{{ '/archive/#y-' | append: year.name | prepend: site.baseurl }}" style="--count: {{ year.items | size }}">
+        <span class="bar"></span>
+        <span class="year">{{ year.name }}</span>
+        <span class="count">{{ year.items | size }}</span>
+      </a>
+    {% endfor %}
+  </div>
+</section>

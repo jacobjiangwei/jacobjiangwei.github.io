@@ -1,0 +1,32 @@
+---
+layout: default
+---
+
+{% assign posts_by_year = site.posts | group_by_exp: "post", "post.date | date: '%Y'" %}
+
+<article class="page-shell archive-page">
+  <header class="page-header">
+    <p class="eyebrow">Archive</p>
+    <h1>{{ page.title }}</h1>
+    <p>{{ site.posts | size }} 篇文章，按年份沉淀成一个长期档案。</p>
+  </header>
+
+  <div class="archive-list">
+    {% for year in posts_by_year %}
+      <section class="archive-year" id="y-{{ year.name }}">
+        <div class="archive-year-label">
+          <span>{{ year.name }}</span>
+          <small>{{ year.items | size }} posts</small>
+        </div>
+        <div class="archive-posts">
+          {% for post in year.items %}
+            <a href="{{ post.url | prepend: site.baseurl }}" class="archive-post">
+              <time datetime="{{ post.date }}">{{ post.date | date: "%m.%d" }}</time>
+              <span>{{ post.title }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      </section>
+    {% endfor %}
+  </div>
+</article>

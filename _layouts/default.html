@@ -1,18 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="zh-CN">
 
   {% include head.html %}
 
-  <body>
+  <body class="layout-{{ page.layout | default: 'default' }}">
 
     {% include navigation.html %}
 
-    <main>
+    <main class="site-main">
       {{ content }}
     </main>
 
     {% include footer.html %}
   </body>
 </html>
-
