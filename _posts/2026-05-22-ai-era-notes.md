@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "AI 时代简记：在 Copilot 现场的两年"
+title: "AI 时代简记"
 description: ""
 category: 
 tags: []
@@ -54,4 +54,3 @@ Word 文档不提了，就连 Markdown 也过时了；我甚至觉得 HTML 协�
 最近一次，我还上台演讲了一小段。其实我很早就有感觉自己该上台了，等到真正站上去的时候，似乎来得已经有点晚；但是同事默默地站在台下给我拍了张照片，我看着还是略微感慨。从不熟练到熟练，再到掌握精通、可以输出帮助别人，it takes a while. But we nailed it!
 
 最后，老板最近也撤掉了。又一个新的 epic madness 要开始了吧——故事还长，我们继续往下写。
-
