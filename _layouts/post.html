@@ -20,6 +20,18 @@ layout: default
   <h1 class="post-title">{{ page.title }}</h1>
   <div class="post-line"></div>
 
+  {% if page.music %}
+    <div class="post-music">
+      <div>
+        <span>Music</span>
+        <strong>{{ page.music.title | default: page.title }}</strong>
+      </div>
+      <audio controls loop preload="none">
+        <source src="{{ page.music.src | relative_url }}" type="audio/mpeg">
+      </audio>
+    </div>
+  {% endif %}
+
   {{ content }}
 </div>
 

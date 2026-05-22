@@ -771,6 +771,42 @@ footer {
   }
 }
 
+.post-music {
+  align-items: center;
+  background: linear-gradient(135deg, rgba(74, 154, 225, .12), rgba(96, 181, 72, .12));
+  border: 1px solid rgba(74, 154, 225, .18);
+  border-radius: 20px;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, .95fr);
+  margin: 0 0 2rem;
+  padding: 1rem;
+
+  span,
+  strong {
+    display: block;
+    font-family: $sans-serif;
+  }
+
+  span {
+    color: #4a9ae1;
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .14em;
+    margin-bottom: .25rem;
+    text-transform: uppercase;
+  }
+
+  strong {
+    color: #111827;
+    font-size: 1rem;
+  }
+
+  audio {
+    width: 100%;
+  }
+}
+
 .pagination {
   border-top-color: rgba(255, 255, 255, .16);
   margin: 2rem 0 4rem;
@@ -830,6 +866,7 @@ footer {
   .section-grid,
   .archive-year,
   .journey-grid,
+  .post-music,
   .timeline-item {
     grid-template-columns: 1fr;
   }

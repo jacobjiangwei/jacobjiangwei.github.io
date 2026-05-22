@@ -2,6 +2,7 @@
 title:          蒋伟的技术宅博客
 description:    "记录生命中有意义的时光"
 url:            "https://jacobjiangwei.github.io"
+timezone:       Asia/Shanghai
 
 # Google Analytics
 google_analytics: G-SJM4PKRSR9
