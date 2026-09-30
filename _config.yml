@@ -37,5 +37,9 @@ paginate:       5
 # Excludes
 exclude: [ Gemfile, Gemfile.lock, tale.gemspec ]
 
-# Disqus (Set to your disqus id)
-disqus:         jekyll-tale
+# Comments (GitHub Discussions)
+giscus:
+  repo:         jacobjiangwei/jacobjiangwei.github.io
+  repo_id:      MDEwOlJlcG9zaXRvcnk1NzAxNTQ1OQ==
+  category:     Announcements
+  category_id:  DIC_kwDOA2X8o84DGvty

@@ -1,12 +1,12 @@
-<nav class="nav">
+<nav class="nav" aria-label="主导航">
   <div class="nav-container">
     <a href="{{ site.baseurl }}/">
       <h2 class="nav-title">Jacob Jiang</h2>
     </a>
     <ul>
-      <li><a href="{{ site.baseurl }}/">首页</a></li>
-      <li><a href="{{ '/archive' | prepend: site.baseurl }}">归档</a></li>
-      <li><a href="{{ '/about' | prepend: site.baseurl }}">关于</a></li>
+      <li><a href="{{ site.baseurl }}/"{% if page.url == '/' %} aria-current="page"{% endif %}>首页</a></li>
+      <li><a href="{{ '/archive' | prepend: site.baseurl }}"{% if page.url == '/archive/' %} aria-current="page"{% endif %}>归档</a></li>
+      <li><a href="{{ '/about' | prepend: site.baseurl }}"{% if page.url == '/about/' %} aria-current="page"{% endif %}>关于</a></li>
     </ul>
   </div>
 </nav>

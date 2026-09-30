@@ -35,9 +35,9 @@ layout: default
   {{ content }}
 </div>
 
-{% if page.comments %}
-  {% include disqus_comments.html %}
-{% endif %}
+{% unless page.comments == false %}
+  {% include giscus_comments.html %}
+{% endunless %}
 
 <div class="pagination">
   {% if page.next.url %}
